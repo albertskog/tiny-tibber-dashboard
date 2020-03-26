@@ -1,0 +1,14 @@
+query PriceQuery{
+  viewer {
+    homes {
+      currentSubscription{
+        priceInfo{
+          today{
+            total
+            startsAt
+          }
+        }
+      }
+    }
+  }
+}
