@@ -2,6 +2,12 @@
 
 This project presents you with today's electricity price from Tibber, shown on a tiny SSD1306 128 x 64 pixel display connected to a Raspberry Pi.
 
+# Requirements
+
+```
+sudo apt install openssl-dev libsdl2-dev
+```
+
 # Usage
 1. Get an API key from https://developer.tibber.com/
 2. Do either of these:
