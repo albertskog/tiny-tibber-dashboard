@@ -1,3 +1,9 @@
+use timer;
+use chrono::{
+    prelude::*,
+    Duration,
+};
+
 mod display;
 use display::DisplayController;
 
@@ -6,8 +12,6 @@ use tibber::get_prices;
 
 #[cfg(target_arch = "arm")]
 use std::thread::sleep;
-#[cfg(target_arch = "arm")]
-use std::time::Duration;
 
 fn main(){
     let prices = get_prices();
@@ -17,8 +21,16 @@ fn main(){
     display.bars(&prices);
     display.run();
 
+    let timer = timer::Timer::new();
+    let refresh_time = (Local::now() + Duration::days(1)).date().and_hms(0, 0, 0);
+    timer.schedule(refresh_time, Some(Duration::days(1)), move || {
+        display.clear();
+        display.bars(&prices);
+        display.run();
+    });
+
     #[cfg(target_arch = "arm")]
     loop {
-        sleep(Duration::from_millis(33));
+        sleep(Duration::seconds(1).to_std().unwrap());
     }
 }

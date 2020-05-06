@@ -11,7 +11,8 @@ embedded-graphics = "0.6.0"
 graphql_client = "0.9.0"
 reqwest = { version = "0.10.4", features = ["blocking", "json"] }
 serde = "1.0.105"
-openssl-sys = { version = "0.9.55", features = ["vendored"] }
+timer = "0.2.0"
+chrono = "0.4.11"
 
 [target.'cfg(not(target_arch = "arm"))'.dependencies]
 embedded-graphics-simulator = "0.2.0"
@@ -19,3 +20,4 @@ embedded-graphics-simulator = "0.2.0"
 [target.'cfg(target_arch = "arm")'.dependencies]
 ssd1306 = "0.3.1"
 linux-embedded-hal = "0.3.0"
+openssl-sys = { version = "0.9.55", features = ["vendored"] }

@@ -97,6 +97,11 @@ impl DisplayController {
     pub fn run(&mut self) {
         self.display.flush().unwrap();
     }
+    
+    #[cfg(target_arch = "arm")]
+    pub fn clear(&mut self) {
+        self.display.clear();
+    }
 
     pub fn bars(&mut self, prices: &Vec<f64>) {
         let price_max = prices.iter().cloned().fold(0./0., f64::max);
