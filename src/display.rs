@@ -6,9 +6,10 @@ use embedded_graphics::{
     primitives::{Line, Rectangle},
     style::{TextStyle},
 };
+use chrono::prelude::*;
 
 #[cfg(not(target_arch = "arm"))]
-use embedded_graphics_simulator::{BinaryColorTheme, SimulatorDisplay, Window, OutputSettingsBuilder};
+use embedded_graphics_simulator::{BinaryColorTheme, SimulatorDisplay, Window, OutputSettingsBuilder, SimulatorEvent};
 
 #[cfg(target_arch = "arm")]
 use ssd1306::{
@@ -19,7 +20,7 @@ use ssd1306::{
 
 
 // Screen size
-//const X_MAX: i32 = 127;
+const X_MAX: i32 = 127;
 const Y_MAX: i32 = 63;
 
 const TEXT_HEIGHT: i32 = 6;
@@ -90,14 +91,30 @@ impl DisplayController {
 
     #[cfg(not(target_arch = "arm"))]
     pub fn run(&mut self) {
-        self.window.show_static(&self.display);
+        self.window.update(&self.display);
+        for event in self.window.events() {
+            match event {
+                SimulatorEvent::Quit => panic!("Quit"),
+                _ => {}
+            }
+        }
     }
 
     #[cfg(target_arch = "arm")]
     pub fn run(&mut self) {
         self.display.flush().unwrap();
     }
-    
+
+    #[cfg(not(target_arch = "arm"))]
+    pub fn clear(&mut self) {
+        let top_left = Point::new(0, 0);
+        let bottom_right = Point::new(X_MAX, Y_MAX);
+        Rectangle::new(top_left, bottom_right)
+            .into_styled(primitive_style!(fill_color = BinaryColor::Off))
+            .draw(&mut self.display)
+            .unwrap();
+    }
+
     #[cfg(target_arch = "arm")]
     pub fn clear(&mut self) {
         self.display.clear();
@@ -133,6 +150,8 @@ impl DisplayController {
         // Add Y labels
         self.draw_price_label(price_max);
         self.draw_price_label(price_min);
+
+        self.draw_time_line();
     }
 
     fn draw_time_label(&mut self, cursor: Point, text: String) {
@@ -193,6 +212,19 @@ impl DisplayController {
 
         Text::new(&text, Point::new(X_PRICE_TEXT_POSITION, y_text_position))
             .into_styled(TextStyle::new(Font6x6, BinaryColor::On))
+            .draw(&mut self.display)
+            .unwrap();
+    }
+
+    fn draw_time_line(&mut self) {
+        let now = Local::now();
+        let x = (now.hour() as i32) * (BAR_WIDTH + BAR_SPACING) 
+                + (now.minute() as i32 / (60 / BAR_WIDTH)) 
+                + X_TIME_MARGIN;
+        let start = Point::new(x, 0);
+        let end = Point::new(x, Y_TIME_TICK_END);
+        Line::new(start, end)
+            .into_styled(primitive_style!(stroke_color = BinaryColor::On, stroke_width = 1))
             .draw(&mut self.display)
             .unwrap();
     }

@@ -14,7 +14,7 @@ pub fn get_prices() -> Vec<f64> {
 
     let client = reqwest::blocking::Client::new();
     let api_url = "https://api.tibber.com/v1-beta/gql";
-    let api_token = var("TIBBER_API_TOKEN").unwrap();
+    let api_token = var("TIBBER_API_TOKEN").expect("TIBBER_API_TOKEN was not defined");
     let request_body = PriceQuery::build_query(price_query::Variables);
 
     let res = client.post(api_url)
