@@ -7,6 +7,7 @@ use embedded_graphics::{
     style::{TextStyle},
 };
 use chrono::prelude::*;
+use std::env::var;
 
 #[cfg(not(target_arch = "arm"))]
 use embedded_graphics_simulator::{BinaryColorTheme, SimulatorDisplay, Window, OutputSettingsBuilder, SimulatorEvent};
@@ -76,7 +77,8 @@ impl DisplayController {
 
     #[cfg(target_arch = "arm")]
     pub fn new() -> DisplayController {
-        let i2c = I2cdev::new("/dev/i2c-1").unwrap();
+        let i2c_device = var("TIBBER_I2C_DEVICE").expect("TIBBER_I2C_DEVICE was not defined");
+        let i2c = I2cdev::new(i2c_device).unwrap();
         let mut display: GraphicsMode<_> = Builder::new().connect_i2c(i2c).into();
         
         display.init().expect("Failed to initialize the display");
