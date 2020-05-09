@@ -7,7 +7,7 @@ use embedded_graphics::{
     style::{TextStyle},
 };
 use chrono::prelude::*;
-use std::env::var;
+
 
 #[cfg(not(target_arch = "arm"))]
 use embedded_graphics_simulator::{BinaryColorTheme, SimulatorDisplay, Window, OutputSettingsBuilder, SimulatorEvent};
@@ -19,6 +19,8 @@ use ssd1306::{
     interface::i2c::I2cInterface,
 };
 
+#[cfg(target_arch = "arm")]
+use std::env::var;
 
 // Screen size
 const X_MAX: i32 = 127;
@@ -52,12 +54,16 @@ pub struct DisplayController {
     display: SimulatorDisplay<BinaryColor>,
     window: Window,
     y_zero_position: i32,
+    price_max: f64,
+    price_min: f64,
 }
 
 #[cfg(target_arch = "arm")]
 pub struct DisplayController {
     display: GraphicsMode<I2cInterface<I2cdev>>,
     y_zero_position: i32,
+    price_max: f64,
+    price_min: f64,
 }
 
 impl DisplayController {
@@ -72,6 +78,8 @@ impl DisplayController {
             display: SimulatorDisplay::new(Size::new(128, 64)),
             window: Window::new("Hello World", &output_settings),
             y_zero_position: Y_MAX - Y_TIME_MARGIN,
+            price_max: 0.0,
+            price_min: 0.0,
         }
     }
 
@@ -88,6 +96,8 @@ impl DisplayController {
         DisplayController {
             display: display,
             y_zero_position: Y_MAX - Y_TIME_MARGIN,
+            price_max: 0.0,
+            price_min: 0.0,
         }
     }
 
@@ -123,11 +133,11 @@ impl DisplayController {
     }
 
     pub fn bars(&mut self, prices: &Vec<f64>) {
-        let price_max = prices.iter().cloned().fold(0./0., f64::max);
-        let price_min = prices.iter().cloned().fold(0./0., f64::min);
+        self.price_max = prices.iter().cloned().fold(0./0., f64::max);
+        self.price_min = prices.iter().cloned().fold(0./0., f64::min);
 
-        let y_zero_offset = if price_min < 0.0 {
-            (price_min * 100.0).round() as i32
+        let y_zero_offset = if self.price_min < 0.0 {
+            (self.price_min * 100.0).round() as i32
         }
         else {
             0
@@ -150,8 +160,7 @@ impl DisplayController {
         }
 
         // Add Y labels
-        self.draw_price_label(price_max);
-        self.draw_price_label(price_min);
+        self.draw_price_labels();
 
         self.draw_time_line();
     }
@@ -195,7 +204,21 @@ impl DisplayController {
             .unwrap();
     }
 
-    fn draw_price_label(&mut self, price: f64) {
+    fn draw_price_labels(&mut self) {
+        let price_spread = ((self.price_max - self.price_min) * 100.0).round() as i32;
+        let offset = if price_spread < TEXT_HEIGHT {
+                (TEXT_HEIGHT - price_spread) / 2
+            }
+            else {
+                0
+            };
+
+        self.draw_price_label(self.price_min, offset);
+        self.draw_price_label(self.price_max, -offset);
+    }
+
+
+    fn draw_price_label(&mut self, price: f64, offset: i32) {
         let text = format!("{}", (price * 100.0).round() as i32);
         let y_price_offset = (price * 100.0).round() as i32;
         let x_tick_offset = text.len() as i32 * 5;
@@ -210,7 +233,7 @@ impl DisplayController {
             .unwrap();
 
         
-        let y_text_position = y_tick_position + Y_PRICE_TEXT_OFFSET;
+        let y_text_position = y_tick_position + Y_PRICE_TEXT_OFFSET + offset;
 
         Text::new(&text, Point::new(X_PRICE_TEXT_POSITION, y_text_position))
             .into_styled(TextStyle::new(Font6x6, BinaryColor::On))
