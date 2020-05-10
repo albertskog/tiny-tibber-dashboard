@@ -23,6 +23,7 @@ use ssd1306::{
 use std::env::var;
 
 // Screen size
+#[cfg(not(target_arch = "arm"))]
 const X_MAX: i32 = 127;
 const Y_MAX: i32 = 63;
 
